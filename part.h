@@ -26,8 +26,7 @@
 #include <stdint.h>
 #include "guid.h"
 
-typedef struct _part
-{
+typedef struct _part {
 	GUID type;
 	GUID uuid;
 	int id;

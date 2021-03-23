@@ -24,21 +24,25 @@
 
 #include <stdint.h>
 
-typedef struct _guid
-{
+typedef struct _guid {
 	uint32_t data1;
 	uint16_t data2;
 	uint16_t data3;
 	uint8_t data4[8];
 } GUID;
 
-#define GUID_STRING_LENGTH		36
-#define GUID_BYTESTRING_LENGTH	16
+#define GUID_STRING_LENGTH 36
+#define GUID_BYTESTRING_LENGTH 16
 
-int guid_to_string(char *str, GUID *guid);
-int string_to_guid(GUID *guid, char *str);
-int guid_to_bytestring(uint8_t *bytes, GUID *guid);
-int random_guid(GUID *guid);
-int guid_is_zero(GUID *guid);
+int
+guid_to_string(char *str, GUID *guid);
+int
+string_to_guid(GUID *guid, char *str);
+int
+guid_to_bytestring(uint8_t *bytes, GUID *guid);
+int
+random_guid(GUID *guid);
+int
+guid_is_zero(GUID *guid);
 
 #endif

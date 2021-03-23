@@ -27,19 +27,22 @@ char *fsnames[512];
 
 #include "fstypes.h"
 
-void init_fstypes()
+void
+init_fstypes()
 {
 	int i;
 
-	for(i = 0; i < 512; i++)
-	{
-		string_to_guid(&fstypes[i], "00000000-0000-0000-0000-000000000000");
+	for (i = 0; i < 512; i++) {
+		string_to_guid(
+			&fstypes[i], "00000000-0000-0000-0000-000000000000");
 		fsnames[i] = NULL;
 	}
 
-	string_to_guid(&fstypes[FSTYPE_EFI_SYSTEM], "C12A7328-F81F-11D2-BA4B-00A0C93EC93B");
+	string_to_guid(&fstypes[FSTYPE_EFI_SYSTEM],
+		"C12A7328-F81F-11D2-BA4B-00A0C93EC93B");
 	fsnames[FSTYPE_EFI_SYSTEM] = "system";
-	string_to_guid(&fstypes[FSTYPE_BIOS_BOOT], "21686148-6449-6E6F-744E-656564454649");
+	string_to_guid(&fstypes[FSTYPE_BIOS_BOOT],
+		"21686148-6449-6E6F-744E-656564454649");
 	fsnames[FSTYPE_BIOS_BOOT] = "bios";
 	string_to_guid(&fstypes[0x01], "EBD0A0A2-B9E5-4433-87C0-68B6B72699C7");
 	fsnames[0x01] = "fat12";

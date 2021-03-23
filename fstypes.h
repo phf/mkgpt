@@ -27,9 +27,10 @@
 extern GUID fstypes[512];
 extern char *fsnames[512];
 
-#define FSTYPE_EFI_SYSTEM		256
-#define FSTYPE_BIOS_BOOT		257
+#define FSTYPE_EFI_SYSTEM 256
+#define FSTYPE_BIOS_BOOT 257
 
-void init_fstypes();
+void
+init_fstypes();
 
 #endif
