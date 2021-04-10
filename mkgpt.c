@@ -19,43 +19,41 @@
  * THE SOFTWARE.
  */
 
+#include "crc32.h"
+#include "fstypes.h"
 #include "guid.h"
 #include "part.h"
-#include "fstypes.h"
-#include <stddef.h>
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-#include <assert.h>
+
 #include <errno.h>
 #include <limits.h>
+#include <stddef.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
-void
+static void
 dump_help(char *fname);
-int
+static int
 check_parts();
-int
+static int
 parse_opts(int argc, char **argv);
-int
+static int
 parse_guid(char *str, GUID *guid);
-void
+static void
 write_output();
 
-int
-CalculateCrc32(uint8_t *Data, size_t DataSize, uint32_t *CrcOut);
-
-size_t sect_size = 512;
-long image_sects = 0;
-long min_image_sects = 2048;
-PART *first_part = NULL;
-PART *last_part = NULL;
-FILE *output = NULL;
-GUID disk_guid;
-int part_count;
-int header_sectors;
-int first_usable_sector;
-int secondary_headers_sect;
-int secondary_gpt_sect;
+static size_t sect_size = 512;
+static long image_sects = 0;
+static long min_image_sects = 2048;
+static PART *first_part = NULL;
+static PART *last_part = NULL;
+static FILE *output = NULL;
+static GUID disk_guid;
+static int part_count;
+static int header_sectors;
+static int first_usable_sector;
+static int secondary_headers_sect;
+static int secondary_gpt_sect;
 
 int
 main(int argc, char **argv)
@@ -86,7 +84,7 @@ main(int argc, char **argv)
 	return 0;
 }
 
-int
+static int
 parse_opts(int argc, char **argv)
 {
 	int i = 1;
@@ -201,13 +199,12 @@ parse_opts(int argc, char **argv)
 			}
 
 			/* Allocate a new partition structure */
-			cur_part = (PART *)malloc(sizeof(PART));
+			cur_part = calloc(1, sizeof(*cur_part));
 			if (cur_part == NULL) {
 				fprintf(stderr, "out of memory allocating "
 						"partition structure\n");
 				return -1;
 			}
-			memset(cur_part, 0, sizeof(PART));
 			cur_part_id++;
 			cur_part->id = cur_part_id;
 
@@ -320,23 +317,22 @@ parse_opts(int argc, char **argv)
 	return 0;
 }
 
-void
+static void
 dump_help(char *fname)
 {
-	printf("Usage: %s -o <output_file> [-h] [--sector-size sect_size] [-s "
-	       "min_image_size] [partition def 0] [part def 1] ... [part def "
-	       "n]\n"
+	printf("Usage: %s -o <output_file> [-h] [--disk-guid GUID] "
+	       "[--sector-size sect_size] [-s min_image_size] "
+	       "[partition def 0] [part def 1] ... [part def n]\n"
 	       "  Partition definition: --part <image_file> --type <type> "
 	       "[--uuid uuid] [--name name]\n"
 	       "  Please see the README file for further information\n",
 		fname);
 }
 
-int
+static int
 parse_guid(char *str, GUID *guid)
 {
 	long mbr_id = -1;
-	int i;
 
 	/* detect request for random uuid */
 	if (!strcmp(str, "random") || !strcmp(str, "rnd"))
@@ -348,7 +344,7 @@ parse_guid(char *str, GUID *guid)
 		mbr_id = -1;
 
 	/* detect by name */
-	for (i = 0; i < 512; i++) {
+	for (int i = 0; i < 512; i++) {
 		if (fsnames[i] == NULL)
 			continue;
 		if (!strcmp(fsnames[i], str)) {
@@ -360,7 +356,7 @@ parse_guid(char *str, GUID *guid)
 	if (mbr_id >= 0 && mbr_id <= 511) {
 		if (guid_is_zero(&fstypes[mbr_id]))
 			return -1;
-		memcpy(guid, &fstypes[mbr_id], sizeof(GUID));
+		*guid = fstypes[mbr_id];
 		return 0;
 	}
 
@@ -368,7 +364,7 @@ parse_guid(char *str, GUID *guid)
 	return string_to_guid(guid, str);
 }
 
-int
+static int
 check_parts()
 {
 	/* Iterate through the partitions, checking validity */
@@ -431,7 +427,7 @@ check_parts()
 		}
 
 		if (cur_part->name == NULL) {
-			cur_part->name = (char *)malloc(128);
+			cur_part->name = malloc(128);
 			sprintf(cur_part->name, "part%i", cur_part_id);
 		}
 
@@ -459,7 +455,7 @@ check_parts()
 			image_sects = min_image_sects;
 	} else if (image_sects < needed_file_length) {
 		fprintf(stderr,
-			"requested image size (%lu) is too small to hold the "
+			"requested image size (%zu) is too small to hold the "
 			"partitions\n",
 			image_sects * sect_size);
 		return -1;
@@ -471,7 +467,14 @@ check_parts()
 	return 0;
 }
 
-void
+static void
+panic(const char *msg)
+{
+	fprintf(stderr, "panic: %s", msg);
+	exit(EXIT_FAILURE);
+}
+
+static void
 write_output()
 {
 	int i;
@@ -479,8 +482,10 @@ write_output()
 	PART *cur_part;
 
 	/* Write MBR */
-	mbr = (uint8_t *)malloc(sect_size);
-	memset(mbr, 0, sect_size);
+	mbr = calloc(1, sect_size);
+	if (mbr == NULL) {
+		panic("calloc failed");
+	}
 
 	*(uint32_t *)&mbr[446] =
 		0x00020000; /* boot indicator = 0, start CHS = 0x000200 */
@@ -498,16 +503,19 @@ write_output()
 	mbr[510] = 0x55;
 	mbr[511] = 0xaa; /* Signature */
 
-	assert(fwrite(mbr, 1, sect_size, output) == sect_size);
+	if (fwrite(mbr, 1, sect_size, output) != sect_size) {
+		panic("fwrite failed");
+	}
 
 	/* Define GPT headers */
-	gpt = (uint8_t *)malloc(sect_size);
-	assert(gpt);
-	gpt2 = (uint8_t *)malloc(sect_size);
-	assert(gpt2);
-
-	memset(gpt, 0, sect_size);
-	memset(gpt2, 0, sect_size);
+	gpt = calloc(1, sect_size);
+	if (gpt == NULL) {
+		panic("calloc failed");
+	}
+	gpt2 = calloc(1, sect_size);
+	if (gpt2 == NULL) {
+		panic("calloc failed");
+	}
 
 	*(uint64_t *)&gpt[0] = 0x5452415020494645ULL; /* Signature */
 	*(uint32_t *)&gpt[8] = 0x00010000UL; /* Revision */
@@ -525,9 +533,10 @@ write_output()
 	*(uint32_t *)&gpt[88] = 0; /* PartitionEntryArrayCRC32 */
 
 	/* Define GPT partition entries */
-	parts = (uint8_t *)malloc(header_sectors * sect_size);
-	assert(parts);
-	memset(parts, 0, header_sectors * sect_size);
+	parts = calloc(header_sectors, sect_size);
+	if (parts == NULL) {
+		panic("calloc failed");
+	}
 
 	cur_part = first_part;
 	i = 0;
@@ -568,13 +577,17 @@ write_output()
 	CalculateCrc32(gpt2, 96, (uint32_t *)&gpt2[16]);
 
 	/* Write primary GPT and headers */
-	assert(fwrite(gpt, 1, sect_size, output) == sect_size);
-	assert(fwrite(parts, 1, header_sectors * sect_size, output) ==
-		header_sectors * sect_size);
+	if (fwrite(gpt, 1, sect_size, output) != sect_size) {
+		panic("fwrite failed");
+	}
+	if (fwrite(parts, 1, header_sectors * sect_size, output) !=
+		header_sectors * sect_size) {
+		panic("fwrite failed");
+	}
 
 	/* Write partitions */
 	cur_part = first_part;
-	image_buf = (uint8_t *)malloc(sect_size);
+	image_buf = malloc(sect_size);
 	while (cur_part) {
 		size_t bytes_read;
 		size_t bytes_written = 0;
@@ -591,8 +604,10 @@ write_output()
 					cur_part->sect_length * sect_size -
 					bytes_written;
 
-			assert(fwrite(image_buf, 1, bytes_to_write, output) ==
-				bytes_to_write);
+			if (fwrite(image_buf, 1, bytes_to_write, output) !=
+				bytes_to_write) {
+				panic("fwrite failed");
+			}
 
 			bytes_written += bytes_to_write;
 		}
@@ -602,8 +617,12 @@ write_output()
 
 	/* Write secondary GPT partition headers and header */
 	fseek(output, secondary_headers_sect * sect_size, SEEK_SET);
-	assert(fwrite(parts, 1, header_sectors * sect_size, output) ==
-		header_sectors * sect_size);
+	if (fwrite(parts, 1, header_sectors * sect_size, output) !=
+		header_sectors * sect_size) {
+		panic("fwrite failed");
+	}
 	fseek(output, secondary_gpt_sect * sect_size, SEEK_SET);
-	assert(fwrite(gpt2, 1, sect_size, output) == sect_size);
+	if (fwrite(gpt2, 1, sect_size, output) != sect_size) {
+		panic("fwrite failed");
+	}
 }

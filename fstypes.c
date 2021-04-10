@@ -19,13 +19,11 @@
  * THE SOFTWARE.
  */
 
-#include "guid.h"
+#include "fstypes.h"
 #include <stddef.h>
 
 GUID fstypes[512];
 char *fsnames[512];
-
-#include "fstypes.h"
 
 void
 init_fstypes()

@@ -60,3 +60,4 @@ Optionally, the string `random` can be used to generate a random GUID.
 - no way to make room for larger boot loaders or to create swap partitions
 - some overly specific code (Linux, Windoze) without a strong need for it
 - some strange code (static info in oversized, dynamically populated array?)
+- some rather broken code (required calls in asserts, misaligned pointers)

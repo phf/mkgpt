@@ -1,3 +1,5 @@
+#pragma once
+
 /* Copyright (C) 2014 by John Cronin
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -37,7 +39,7 @@ typedef struct _part {
 	char *name;
 	FILE *src;
 
-	struct _part *next;
+	struct _part *next; /* TODO why build a list? */
 } PART;
 
 #endif

@@ -1,3 +1,5 @@
+#pragma once
+
 /* Copyright (C) 2014 by John Cronin
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -24,6 +26,7 @@
 
 #include <stdint.h>
 
+/* TODO is this abstraction really needed? (see fstype.c mess) */
 typedef struct _guid {
 	uint32_t data1;
 	uint16_t data2;
@@ -34,15 +37,17 @@ typedef struct _guid {
 #define GUID_STRING_LENGTH 36
 #define GUID_BYTESTRING_LENGTH 16
 
+/* TODO never actually used? */
 int
-guid_to_string(char *str, GUID *guid);
+guid_to_string(char *str, const GUID *guid);
+
 int
-string_to_guid(GUID *guid, char *str);
+string_to_guid(GUID *guid, const char *str);
 int
-guid_to_bytestring(uint8_t *bytes, GUID *guid);
+guid_to_bytestring(uint8_t *bytes, const GUID *guid);
 int
 random_guid(GUID *guid);
 int
-guid_is_zero(GUID *guid);
+guid_is_zero(const GUID *guid);
 
 #endif
