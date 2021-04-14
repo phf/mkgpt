@@ -1,5 +1,7 @@
 #pragma once
 
+/* SPDX-License-Identifier: MIT */
+
 #ifndef CRC32_H
 #define CRC32_H
 

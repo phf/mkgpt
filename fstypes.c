@@ -1,3 +1,5 @@
+/* SPDX-License-Identifier: MIT */
+
 /* Copyright (C) 2014 by John Cronin
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -62,4 +64,6 @@ init_fstypes()
 	fsnames[0x29] = "fat32+";
 	string_to_guid(&fstypes[0x83], "0FC63DAF-8483-4772-8E79-3D69D8477DE4");
 	fsnames[0x83] = "linux";
+	string_to_guid(&fstypes[0x82], "0657FD6D-A4AB-43C4-84E5-0933C84B4F4F");
+	fsnames[0x82] = "swap";
 }

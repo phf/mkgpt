@@ -7,8 +7,8 @@ contents of provided partition images.
 
 Just say `make` followed by `make install` and most likely you'll be happy.
 If you want a compact, statically linked executable make sure you have the
-`musl-gcc` wrapper installed and say `make static` followed by `make install`
-instead.
+`musl-gcc` wrapper installed and say `make musl-static` (or just `make static`
+if you have a full musl toolchain) followed by `make install` instead.
 
 ## How to use
 
