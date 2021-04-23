@@ -16,14 +16,14 @@ static: prod
 musl-static: CC:=musl-gcc
 musl-static: static
 
-mkgpt: mkgpt.o crc32.o fstypes.o guid.o
+mkgpt: mkgpt.o crc32.o guid.o part_ids.o
 
-mkgpt.o: mkgpt.c guid.h fstypes.h part.h crc32.h
-fstypes.o: fstypes.c fstypes.h guid.h
+mkgpt.o: mkgpt.c guid.h part.h crc32.h
 guid.o: guid.c guid.h
 crc32.o: crc32.c crc32.h
+part_ids.o: part_ids.c part_ids.h guid.h
 
-.PHONY: check clean format install uninstall
+.PHONY: check clean format install uninstall  dev prod static musl-static
 check:
 	-cppcheck --enable=all --inconclusive --std=c11 .
 	-shellcheck *.sh

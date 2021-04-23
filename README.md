@@ -61,3 +61,12 @@ Optionally, the string `random` can be used to generate a random GUID.
 - some overly specific code (Linux, Windoze) without a strong need for it
 - some strange code (static info in oversized, dynamically populated array?)
 - some rather broken code (required calls in asserts, misaligned pointers)
+
+## References
+
+Not enough people seem to know about this, so here you go:
+
+- https://www.drdobbs.com/the-new-c-x-macros/184401387
+- https://www.embedded.com/reduce-c-language-coding-errors-with-x-macros-part-1/
+- https://www.embedded.com/reduce-c-language-coding-errors-with-x-macros-part-2/
+- https://www.embedded.com/reduce-c-language-coding-errors-with-x-macros-part-3/

@@ -22,9 +22,9 @@
  */
 
 #include "crc32.h"
-#include "fstypes.h"
 #include "guid.h"
 #include "part.h"
+#include "part_ids.h"
 
 #include <errno.h>
 #include <limits.h>
@@ -39,8 +39,6 @@ static int
 check_parts();
 static int
 parse_opts(int argc, char **argv);
-static int
-parse_guid(char *str, GUID *guid);
 static void
 write_output();
 
@@ -60,7 +58,6 @@ static int secondary_gpt_sect;
 int
 main(int argc, char **argv)
 {
-	init_fstypes();
 	random_guid(&disk_guid);
 
 	if (parse_opts(argc, argv) != 0)
@@ -329,41 +326,6 @@ dump_help(char *fname)
 	       "[--uuid uuid] [--name name]\n"
 	       "  Please see the README file for further information\n",
 		fname);
-}
-
-static int
-parse_guid(char *str, GUID *guid)
-{
-	long mbr_id = -1;
-
-	/* detect request for random uuid */
-	if (!strcmp(str, "random") || !strcmp(str, "rnd"))
-		return random_guid(guid);
-
-	/* detect mbr partition id by number */
-	mbr_id = strtol(str, NULL, 0);
-	if (mbr_id == LONG_MIN || mbr_id == LONG_MAX)
-		mbr_id = -1;
-
-	/* detect by name */
-	for (int i = 0; i < 512; i++) {
-		if (fsnames[i] == NULL)
-			continue;
-		if (!strcmp(fsnames[i], str)) {
-			mbr_id = i;
-			break;
-		}
-	}
-
-	if (mbr_id >= 0 && mbr_id <= 511) {
-		if (guid_is_zero(&fstypes[mbr_id]))
-			return -1;
-		*guid = fstypes[mbr_id];
-		return 0;
-	}
-
-	/* try and parse as guid */
-	return string_to_guid(guid, str);
 }
 
 static int

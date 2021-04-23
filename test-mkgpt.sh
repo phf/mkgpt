@@ -10,8 +10,8 @@ if [ ! -x ./mkgpt ]; then
 fi
 
 mkdir -pv ${tmpdir}
-for name in a.img b.img c.img d.img; do
-	truncate --size=16M ${tmpdir}/${name}
+for name in a.img b.img c.img d.img e.img; do
+	truncate --size=8M ${tmpdir}/${name}
 done
 
 # TODO something goes wrong with --sector-size 1024 or 4096
@@ -19,7 +19,8 @@ done
 	--part ${tmpdir}/a.img --type system \
 	--part ${tmpdir}/b.img --type fat32 \
 	--part ${tmpdir}/c.img --type linux \
-	--part ${tmpdir}/d.img --type swap
+	--part ${tmpdir}/d.img --type 0x82 \
+	--part ${tmpdir}/e.img --type 21686148-6449-6E6F-744E-656564454649
 
 fdisk -l ${tmpdir}/bla.img
 
