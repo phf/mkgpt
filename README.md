@@ -21,7 +21,7 @@ if you have a full musl toolchain) followed by `make install` instead.
 - `--minimum-image-size <size>`
   minimum size of the image in sectors (defaults to 2048)
 - `--disk-guid <guid>`
-  GUID of the entire disk (see GUID format below - defaults to random)
+  GUID of the entire disk (see GUID format below, defaults to random)
 - `--part <file> <options>`
   begin a partition entry containing the specified image as its data and
   options as below
@@ -31,19 +31,19 @@ if you have a full musl toolchain) followed by `make install` instead.
 - `--name <name>`
   set the name of the entry in the GPT
 - `--type <type>`
-  set the type of the entry, either a GUID, MBR partition ID _in decimal_ or
-  one of the known paritition types
+  set the type of the entry, either a GUID, numeric MBR-style partition ID, or
+  one of the known partition types
 - `--uuid <guid>`
-  specify the UUID of the partition in the GPT (defaults to a random uuid)
+  specify the UUID of the partition in the GPT (defaults to a random UUID)
 
 ### Known partition types
 
-- `system` EFI sytem partition
-- `bios` BIOS boot partition
+- EFI system partition: `system`
+- BIOS boot partition: `bios`
 - FAT types: `fat12`, `fat16`, `fat16b`, `fat32`, `fat16x`, `fat32x`, `fat16+`,
   `fat32+`
 - NTFS types: `ntfs`
-- Linux types: `linux`
+- Linux types: `linux`, `swap`
 
 ### GUID format
 
