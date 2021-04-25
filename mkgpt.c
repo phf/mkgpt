@@ -26,12 +26,15 @@
 #include "part.h"
 #include "part_ids.h"
 
+#include <assert.h>
 #include <errno.h>
 #include <limits.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+#define MAX_PART_NAME (36)
 
 static void
 dump_help(char *fname);
@@ -42,11 +45,17 @@ parse_opts(int argc, char **argv);
 static void
 write_output();
 
+static inline int
+min(const int a, const int b)
+{
+	return a < b ? a : b;
+}
+
 static size_t sect_size = 512;
 static long image_sects = 0;
 static long min_image_sects = 2048;
-static PART *first_part = NULL;
-static PART *last_part = NULL;
+static struct partition *first_part = NULL;
+static struct partition *last_part = NULL;
 static FILE *output = NULL;
 static GUID disk_guid;
 static int part_count;
@@ -88,7 +97,7 @@ parse_opts(int argc, char **argv)
 {
 	int i = 1;
 	int cur_part_id = 0;
-	PART *cur_part = NULL;
+	struct partition *cur_part = NULL;
 
 	/* First, parse global options */
 	while (i < argc) {
@@ -206,6 +215,8 @@ parse_opts(int argc, char **argv)
 			}
 			cur_part_id++;
 			cur_part->id = cur_part_id;
+			snprintf(cur_part->name, sizeof(cur_part->name),
+				"part%i", cur_part_id);
 
 			/* Get the filename of the partition image */
 			i++;
@@ -242,7 +253,19 @@ parse_opts(int argc, char **argv)
 				return -1;
 			}
 
-			cur_part->name = argv[i];
+			/*
+			 * TODO we would really need to check the number of
+			 * UTF-8 characters and not the number of bytes here...
+			 */
+			if (strlen(argv[i]) > MAX_PART_NAME) {
+				fprintf(stderr,
+					"partition name too long (max %i)\n",
+					MAX_PART_NAME);
+				return -1;
+			}
+			static_assert(sizeof(cur_part->name) >= MAX_PART_NAME,
+				"more space for name in struct partition");
+			strcpy(cur_part->name, argv[i]);
 
 			i++;
 		} else if (!strcmp(argv[i], "--type") ||
@@ -334,7 +357,7 @@ check_parts()
 	/* Iterate through the partitions, checking validity */
 	int cur_part_id = 0;
 	int cur_sect;
-	PART *cur_part;
+	struct partition *cur_part;
 	int header_length;
 	int needed_file_length;
 
@@ -390,11 +413,6 @@ check_parts()
 			return -1;
 		}
 
-		if (cur_part->name == NULL) {
-			cur_part->name = malloc(128);
-			sprintf(cur_part->name, "part%i", cur_part_id);
-		}
-
 		fseek(cur_part->src, 0, SEEK_END);
 		cur_part_file_len = ftell(cur_part->src);
 		fseek(cur_part->src, 0, SEEK_SET);
@@ -443,7 +461,7 @@ write_output()
 {
 	int i;
 	uint8_t *mbr, *gpt, *gpt2, *parts, *image_buf;
-	PART *cur_part;
+	struct partition *cur_part;
 
 	/* Write MBR */
 	mbr = calloc(1, sect_size);
@@ -519,11 +537,15 @@ write_output()
 		*(uint64_t *)&parts[i * 128 + 48] =
 			cur_part->attrs; /* Attributes */
 
-		for (char_id = 0;
-			char_id < (int)strlen(cur_part->name) && char_id < 35;
-			char_id++)
+		/*
+		 * TODO settle missing UTF-16LE conversion issue somehow,
+		 * possibly by simply limiting the tool to ASCII here?
+		 */
+		int len = min(strlen(cur_part->name), MAX_PART_NAME);
+		for (char_id = 0; char_id < len; char_id++) {
 			*(uint16_t *)&parts[i * 128 + 56 + char_id * 2] =
 				(uint16_t)cur_part->name[char_id];
+		}
 
 		i++;
 		cur_part = cur_part->next;

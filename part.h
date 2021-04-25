@@ -26,22 +26,22 @@
 #ifndef PART_H
 #define PART_H
 
-#include <stdio.h>
-#include <stdint.h>
 #include "guid.h"
 
-typedef struct _part {
+#include <stdint.h>
+#include <stdio.h>
+
+struct partition {
 	GUID type;
 	GUID uuid;
-	int id;
 	uint64_t attrs;
+	long src_length;
+	FILE *src;
+	struct partition *next; /* TODO why build a list? */
+	int id;
 	int sect_start;
 	int sect_length;
-	long src_length;
-	char *name;
-	FILE *src;
-
-	struct _part *next; /* TODO why build a list? */
-} PART;
+	char name[52];
+};
 
 #endif
