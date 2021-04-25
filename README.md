@@ -57,16 +57,30 @@ Optionally, the string `random` can be used to generate a random GUID.
 ## Why fork?
 
 - the original build process seemed bloated for a tool this simple
-- no way to make room for larger boot loaders or to create swap partitions
+- no way to create swap partitions (borked GUID parsing)
 - some overly specific code (Linux, Windoze) without a strong need for it
 - some strange code (static info in oversized, dynamically populated array?)
 - some rather broken code (required calls in asserts, misaligned pointers)
 
 ## References
 
-Not enough people seem to know about this, so here you go:
+Not enough people seem to know about these things, so here you go:
 
 - https://www.drdobbs.com/the-new-c-x-macros/184401387
 - https://www.embedded.com/reduce-c-language-coding-errors-with-x-macros-part-1/
 - https://www.embedded.com/reduce-c-language-coding-errors-with-x-macros-part-2/
 - https://www.embedded.com/reduce-c-language-coding-errors-with-x-macros-part-3/
+- http://www.catb.org/esr/structure-packing/
+
+Here's some background on the whole GPT mess:
+
+- https://en.wikipedia.org/wiki/GUID_Partition_Table
+- https://en.wikipedia.org/wiki/BIOS_boot_partition
+  (I misunderstood this at first, read if you come from MBR)
+- Apple's [Secrets of the GPT](https://developer.apple.com/library/archive/technotes/tn2166/_index.html)
+  has some useful background (once you ignore the Apple-rific stuff)
+
+Want to scare yourself?
+
+- https://uefi.org/sites/default/files/resources/UEFI_Spec_2_8_final.pdf
+  (enjoy 2,500 pages of dread)
