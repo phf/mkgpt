@@ -1,4 +1,4 @@
-CFLAGS+=-Wall -Wextra -Wpedantic -std=c11 -D_DEFAULT_SOURCE
+CFLAGS+=-Wall -Wextra -Wpedantic -std=c11 -D_DEFAULT_SOURCE #-D_FORTIFY_SOURCE=2
 ALL:=mkgpt
 PREFIX:=/usr/local
 

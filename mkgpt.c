@@ -25,6 +25,7 @@
 #include "guid.h"
 #include "part.h"
 #include "part_ids.h"
+#include "unaligned.h"
 
 #include <assert.h>
 #include <errno.h>
@@ -34,7 +35,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define MAX_PART_NAME (36)
+#define MAX_PART_NAME (36U)
+#define MIN_SECTOR_SIZE (512U)
+#define MAX_SECTOR_SIZE (4096U)
 
 static void
 dump_help(char *fname);
@@ -51,7 +54,7 @@ min(const int a, const int b)
 	return a < b ? a : b;
 }
 
-static size_t sect_size = 512;
+static size_t sect_size = MIN_SECTOR_SIZE;
 static long image_sects = 0;
 static long min_image_sects = 2048;
 static struct partition *first_part = NULL;
@@ -144,13 +147,15 @@ parse_opts(int argc, char **argv)
 
 			sect_size = atoi(argv[i]);
 
-			if (sect_size < 512 || sect_size > 4096 ||
-				sect_size % 512) {
+			if (sect_size < MIN_SECTOR_SIZE ||
+				sect_size > MAX_SECTOR_SIZE ||
+				sect_size % MIN_SECTOR_SIZE) {
 				fprintf(stderr,
 					"invalid sector size (%zu) - must be "
-					">= 512 and <= 4096 and "
-					"a multiple of 512",
-					sect_size);
+					">= %u and <= %u and "
+					"a multiple of %u",
+					sect_size, MIN_SECTOR_SIZE,
+					MAX_SECTOR_SIZE, MIN_SECTOR_SIZE);
 				return -1;
 			}
 			i++;
@@ -456,48 +461,52 @@ panic(const char *msg)
 	exit(EXIT_FAILURE);
 }
 
+/*
+ * Write the "protective MBR" to FILE *output.
+ */
 static void
-write_output()
+write_mbr(void)
 {
-	int i;
-	uint8_t *mbr, *gpt, *gpt2, *parts, *image_buf;
-	struct partition *cur_part;
+	uint8_t mbr[MAX_SECTOR_SIZE] = {0};
+	assert(sect_size <= sizeof(mbr));
 
-	/* Write MBR */
-	mbr = calloc(1, sect_size);
-	if (mbr == NULL) {
-		panic("calloc failed");
+	/* entry for "Partition 1" starts here */
+	uint8_t *p1 = mbr + 446;
+
+	/* boot indicator = 0, start CHS = 0x000200 */
+	set_u32(p1 + 0, 0x00020000);
+	/* OSType 0xee = GPT Protective, EndingCHS = 0xffffff */
+	set_u32(p1 + 4, 0xffffffee);
+	/* StartingLBA = 1 */
+	set_u32(p1 + 8, 0x00000001);
+	/* number of sectors in partition */
+	if (image_sects > 0xffffffff) {
+		set_u32(p1 + 12, 0xffffffff);
+	} else {
+		assert(image_sects > 1); /* 0 sectors is not allowed */
+		set_u32(p1 + 12, image_sects - 1);
 	}
-
-	*(uint32_t *)&mbr[446] =
-		0x00020000; /* boot indicator = 0, start CHS = 0x000200 */
-	mbr[446 + 4] = 0xee; /* OSType = GPT Protective */
-	mbr[446 + 5] = 0xff;
-	mbr[446 + 6] = 0xff;
-	mbr[446 + 7] = 0xff; /* EndingCHS = 0xffffff */
-	*(uint32_t *)&mbr[446 + 8] = 0x1; /* StartingLBA = 1 */
-
-	if (image_sects > 0xffffffff)
-		*(uint32_t *)&mbr[446 + 12] = 0xffffffff;
-	else
-		*(uint32_t *)&mbr[446 + 12] = (uint32_t)image_sects - 1;
-
-	mbr[510] = 0x55;
-	mbr[511] = 0xaa; /* Signature */
+	/* Signature */
+	set_u16(mbr + 510, 0xaa55);
 
 	if (fwrite(mbr, 1, sect_size, output) != sect_size) {
 		panic("fwrite failed");
 	}
+}
+
+static void
+write_output(void)
+{
+	uint8_t *parts;
+	struct partition *cur_part;
+
+	write_mbr();
 
 	/* Define GPT headers */
-	gpt = calloc(1, sect_size);
-	if (gpt == NULL) {
-		panic("calloc failed");
-	}
-	gpt2 = calloc(1, sect_size);
-	if (gpt2 == NULL) {
-		panic("calloc failed");
-	}
+	uint8_t gpt[MAX_SECTOR_SIZE] = {0};
+	assert(sect_size <= sizeof(gpt));
+	uint8_t gpt2[MAX_SECTOR_SIZE] = {0};
+	assert(sect_size <= sizeof(gpt2));
 
 	*(uint64_t *)&gpt[0] = 0x5452415020494645ULL; /* Signature */
 	*(uint32_t *)&gpt[8] = 0x00010000UL; /* Revision */
@@ -521,7 +530,7 @@ write_output()
 	}
 
 	cur_part = first_part;
-	i = 0;
+	int i = 0;
 	while (cur_part) {
 		int char_id;
 
@@ -540,6 +549,9 @@ write_output()
 		/*
 		 * TODO settle missing UTF-16LE conversion issue somehow,
 		 * possibly by simply limiting the tool to ASCII here?
+		 * TODO used to be "&& char_id < 35" but MAX_PART_NAME is 36
+		 * now so which is correct? do we need a "double zero" at the
+		 * end or not? what does the spec say?
 		 */
 		int len = min(strlen(cur_part->name), MAX_PART_NAME);
 		for (char_id = 0; char_id < len; char_id++) {
@@ -573,7 +585,8 @@ write_output()
 
 	/* Write partitions */
 	cur_part = first_part;
-	image_buf = malloc(sect_size);
+	uint8_t image_buf[MAX_SECTOR_SIZE] = {0};
+	assert(sect_size <= sizeof(image_buf));
 	while (cur_part) {
 		size_t bytes_read;
 		size_t bytes_written = 0;
@@ -611,4 +624,6 @@ write_output()
 	if (fwrite(gpt2, 1, sect_size, output) != sect_size) {
 		panic("fwrite failed");
 	}
+
+	free(parts);
 }

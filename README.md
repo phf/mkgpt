@@ -60,7 +60,7 @@ Optionally, the string `random` can be used to generate a random GUID.
 - no way to create swap partitions (borked GUID parsing)
 - some overly specific code (Linux, Windoze) without a strong need for it
 - some strange code (static info in oversized, dynamically populated array?)
-- some rather broken code (required calls in asserts, misaligned pointers)
+- some rather broken code (required calls in asserts, misaligned pointers, memory leaks)
 
 ## References
 
@@ -71,6 +71,7 @@ Not enough people seem to know about these things, so here you go:
 - https://www.embedded.com/reduce-c-language-coding-errors-with-x-macros-part-2/
 - https://www.embedded.com/reduce-c-language-coding-errors-with-x-macros-part-3/
 - http://www.catb.org/esr/structure-packing/
+- https://nullprogram.com/blog/2016/11/22/
 
 Here's some background on the whole GPT mess:
 
@@ -79,6 +80,9 @@ Here's some background on the whole GPT mess:
   (I misunderstood this at first, read if you come from MBR)
 - Apple's [Secrets of the GPT](https://developer.apple.com/library/archive/technotes/tn2166/_index.html)
   has some useful background (once you ignore the Apple-rific stuff)
+- https://thestarman.pcministry.com/asm/mbr/GPT.htm
+  (points out disagreements between Windoze protective MBRs and the UEFI
+  specification)
 
 Want to scare yourself?
 
