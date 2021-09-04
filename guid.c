@@ -22,6 +22,7 @@
  */
 
 #include "guid.h"
+#include "unaligned.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -75,10 +76,9 @@ guid_to_bytestring(uint8_t *bytes, const GUID *guid)
 		return -1;
 	}
 
-	/* TODO potential alignment problem? */
-	*(uint32_t *)&bytes[0] = guid->data1;
-	*(uint16_t *)&bytes[4] = guid->data2;
-	*(uint16_t *)&bytes[6] = guid->data3;
+	set_u32(bytes + 0, guid->data1);
+	set_u16(bytes + 4, guid->data2);
+	set_u16(bytes + 6, guid->data3);
 	for (int i = 0; i < 8; i++) {
 		bytes[8 + i] = guid->data4[i];
 	}

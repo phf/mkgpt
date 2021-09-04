@@ -88,3 +88,7 @@ Want to scare yourself?
 
 - https://uefi.org/sites/default/files/resources/UEFI_Spec_2_8_final.pdf
   (enjoy 2,500 pages of dread)
+
+Similar tool with JSON input?
+
+- https://gitlab.com/bztsrc/bootboot/tree/master/mkbootimg

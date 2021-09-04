@@ -25,6 +25,7 @@ done
 
 fdisk -l ${tmpdir}/bla.img
 sfdisk --verify ${tmpdir}/bla.img
+sfdisk --dump ${tmpdir}/bla.img
 head -c 512 ${tmpdir}/bla.img | xxd -s 446
 
 checksum=$(md5sum ${tmpdir}/bla.img | cut -c1-32)
