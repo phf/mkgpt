@@ -5,10 +5,11 @@ contents of provided partition images.
 
 ## How to build
 
-Just say `make` followed by `make install` and most likely you'll be happy.
-If you want a compact, statically linked executable make sure you have the
-`musl-gcc` wrapper installed and say `make musl-static` (or just `make static`
-if you have a full musl toolchain) followed by `make install` instead.
+Just say `make` followed by `sudo make install` and you'll most likely be happy.
+If you want a compact, statically-linked executable instead, install the `musl`
+toolchain of your choice (even the `musl-gcc` wrapper works) and say
+`make static` (or `CC=whatever make static`) followed by `sudo make install`
+instead.
 
 ## How to use
 
