@@ -1,5 +1,4 @@
-.POSIX:
-CC?=cc # GNU make .POSIX fix
+#.POSIX: # GNU make forces CC=c99 which breaks -std=c11
 SHELL=/bin/sh # paranoia
 
 .PHONY: prod static dev sane  check clean depend format  install uninstall
