@@ -9,9 +9,13 @@ if [ ! -x ./mkgpt ]; then
 	exit 1
 fi
 
-mkdir -pv ${tmpdir}
+mkdir -p ${tmpdir}
 for name in a.img b.img c.img d.img e.img; do
-	truncate --size=8M ${tmpdir}/${name}
+	if which truncate 2>/dev/null; then
+		truncate --size=8M ${tmpdir}/${name}
+	else
+		dd if=/dev/zero of=${tmpdir}/${name} bs=1M count=8
+	fi
 done
 
 # TODO something goes wrong with --sector-size 1024 or 4096
@@ -23,13 +27,15 @@ done
 	--part ${tmpdir}/d.img --type 0x82 --name 123456789012345678901234567890123456 --uuid 22222222-2222-2222-2222-222222222222 \
 	--part ${tmpdir}/e.img --type 21686148-6449-6E6F-744E-656564454649 --uuid 44444444-4444-4444-4444-444444444444
 
-fdisk -l ${tmpdir}/bla.img
-sfdisk --verify ${tmpdir}/bla.img
-sfdisk --dump ${tmpdir}/bla.img
-head -c 512 ${tmpdir}/bla.img | xxd -s 446
+if [ "$(uname)" = "Linux" ]; then
+	fdisk -l ${tmpdir}/bla.img
+	sfdisk --verify ${tmpdir}/bla.img
+	sfdisk --dump ${tmpdir}/bla.img
+fi
+dd if=${tmpdir}/bla.img bs=512 count=1 | xxd -seek 446
 
 checksum=$(md5sum ${tmpdir}/bla.img | cut -c1-32)
-if [ ! "$checksum" = "a4abc130196a29288ab9af1c4489fe24" ]; then
+if [ ! "${checksum}" = "a4abc130196a29288ab9af1c4489fe24" ]; then
 	echo "checksum didn't match, regression!"
 	exit 1
 fi

@@ -33,6 +33,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 struct partition {
 	GUID type;
@@ -95,6 +96,14 @@ static int secondary_gpt_sect;
 int
 main(int argc, char *argv[])
 {
+#if defined(__OpenBSD__)
+	if (pledge("stdio cpath rpath wpath", NULL) != 0) {
+		fprintf(stderr, "failed to pledge\n");
+		exit(EXIT_FAILURE);
+	}
+	/* TODO call unveil on each path AHEAD of using it? */
+#endif
+
 	random_guid(&disk_guid);
 
 	if (parse_opts(argc, argv) != 0) {

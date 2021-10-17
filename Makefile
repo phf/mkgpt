@@ -1,37 +1,48 @@
+.POSIX:
+CC?=cc # GNU make .POSIX fix
+SHELL=/bin/sh # paranoia
+
+.PHONY: prod static dev sane  check clean depend format  install uninstall
+.SUFFIXES:
+.SUFFIXES: .c .o
+.c.o:
+	$(CC) $(CFLAGS) $(CPPFLAGS) -c -o $@ $<
+
 CFLAGS+=-Wall -Wextra -Wpedantic -std=c11 -D_DEFAULT_SOURCE #-D_FORTIFY_SOURCE=2
-ALL:=mkgpt
-PREFIX:=/usr/local
+LDFLAGS+=
 
-dev: CFLAGS+=-g3 -Og -fsanitize=address -fsanitize=undefined
-dev: LDFLAGS+=-fsanitize=address -fsanitize=undefined
-dev: $(ALL)
+OBJS=mkgpt.o crc32.o guid.o part_ids.o
 
-prod: CFLAGS+=-g0 -Os
-prod: LDFLAGS+=-s
-prod: $(ALL)
+mkgpt: $(OBJS)
+	$(CC) $(LDFLAGS) -o $@ $(OBJS) $(LDLIBS)
 
-static: LDFLAGS+=-static
-static: prod
+# use "make depend" to generate a new one
+-include deps.mk
 
-musl-static: CC:=musl-gcc
-musl-static: static
+# different ways to build
+prod:
+	CFLAGS="-g0 -Os" LDFLAGS="-s" $(MAKE) mkgpt
+static:
+	CFLAGS="-g0 -Os" LDFLAGS="-s -static" $(MAKE) mkgpt
+dev:
+	CFLAGS="-g3 -Og" $(MAKE) mkgpt
+sane:
+	CFLAGS="-g3 -Og -fsanitize=address -fsanitize=undefined" \
+	LDFLAGS="-fsanitize=address -fsanitize=undefined" \
+	$(MAKE) mkgpt
 
-mkgpt: mkgpt.o crc32.o guid.o part_ids.o
-
-mkgpt.o: mkgpt.c guid.h crc32.h
-guid.o: guid.c guid.h
-crc32.o: crc32.c crc32.h
-part_ids.o: part_ids.c part_ids.h guid.h
-
-.PHONY: check clean format install uninstall  dev prod static musl-static
 check:
 	-cppcheck --enable=all --inconclusive --std=c11 .
 	-shellcheck *.sh
 clean:
-	$(RM) *.o $(ALL)
+	rm -fv $(OBJS) mkgpt
+depend:
+	$(CC) -MM *.c >deps.mk
 format:
 	-clang-format -verbose -i *.[ch]
-install: prod
+
+PREFIX=/usr/local
+install:
 	mkdir -pv $(DESTDIR)$(PREFIX)/bin
 	cp -fv mkgpt $(DESTDIR)$(PREFIX)/bin
 uninstall:
